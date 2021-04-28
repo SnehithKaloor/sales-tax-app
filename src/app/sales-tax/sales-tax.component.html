@@ -1,27 +1,26 @@
 <div class="navbar" role="banner">
-    <span class="title">Sales-Tax !!</span>
+  <span class="title">Sales-Tax !!</span>
+</div>
+
+<div class="content" role="main">
+  <div class="form">
+    <!-- Text File Upload -->
+    <h2 class="">Please upload a text(.txt) file with items to generate a receipt:</h2>
+    <input type="file" (change)="onFileUpload($event.target.files)">
   </div>
-  
-  <div class="content" role="main">
-    <div class="form">
-      <!-- Text File Upload -->
-      <h3 class="">Please upload a text(.txt) file with items to generate a receipt:</h3>
-      <input type="file" (change)="onChange($event.target.files)">
-    </div>
-  
-    <div *ngIf="checkoutItems.length > 0" class="">
-      <h3>Here's your receipt:</h3>
-      <ul style="list-style-type:none;">
-        <li *ngFor="let item of checkoutItems">
-          <pre>{{ item.name }}: {{ item.price | number : '1.2-2' }}</pre>
-        </li>
-        <li>
-  
-          <pre>Sales taxes: {{ totalSalesTax | number : '1.2-2' }}</pre>
-        </li>
-        <li>
-          <pre>Total: {{ total  | number : '1.2-2' }}</pre>
-        </li>
-      </ul>
-    </div>
+
+  <div *ngIf="productDataList.length > 0" class="">
+    <h3>Here's your receipt:</h3>
+    <ul style="list-style-type:none;">
+      <li *ngFor="let productData of productDataList">
+        <pre>{{ productData.name }}: {{ productData.priceWithTax | number : '1.2-2' }}</pre>
+      </li>
+      <li>
+        <pre>Sales taxes: {{ totals.totalSalesTax | number : '1.2-2' }}</pre>
+      </li>
+      <li>
+        <pre>Total: {{ totals.totalPrice  | number : '1.2-2' }}</pre>
+      </li>
+    </ul>
   </div>
+</div>

@@ -1,12 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { SalesTaxComponent } from './sales-tax.component';
-
-
-const items = {
-  "0": "1 imported box of chocolates",
-  "1": " 10.00"
-}
+import { productMockdata, totalsMockdata, items } from './sales-tax.mock';
 
 describe('SalesTaxComponent', () => {
   let component: SalesTaxComponent;
@@ -14,9 +8,9 @@ describe('SalesTaxComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ SalesTaxComponent ]
+      declarations: [SalesTaxComponent]
     })
-    .compileComponents();
+      .compileComponents();
   });
 
   beforeEach(() => {
@@ -29,8 +23,13 @@ describe('SalesTaxComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should calculate tax', () => {
-    //component.calculateTax(items);
+  it('should return prepared product data', () => {
+    let productData = component.prepareProductData(items);
+    expect({ ...productData }).toEqual({ ...productMockdata });
   });
 
+  it('should return total taxes and total prices data', () => {
+    let totalsData = component.calculateTotals(productMockdata);
+    expect({ ...totalsData }).toEqual({ ...totalsMockdata });
+  });
 });

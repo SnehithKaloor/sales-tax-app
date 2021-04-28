@@ -1,5 +1,30 @@
 import { Component } from '@angular/core';
 
+interface ProductData {
+  name?: string;
+  price?: number;
+  quantity?: number;
+  isImported?: boolean;
+  isExempted?: boolean;
+  salesTax?: number;
+  priceWithTax?: number;
+}
+
+interface Totals {
+  totalSalesTax?: number;
+  totalPrice?: number;
+}
+
+const itemType = [
+  'imported'
+]
+
+const exemptItems = [
+  'book',
+  'chocolate',
+  'pills',
+]
+
 @Component({
   selector: 'app-sales-tax',
   templateUrl: './sales-tax.component.html',
@@ -7,94 +32,63 @@ import { Component } from '@angular/core';
 })
 export class SalesTaxComponent {
 
-  checkoutItems: any = []
-  total: any = 0;
-  totalSalesTax: any = 0;
   fileContent: any = '';
-  
-  itemType = [
-    'imported'
-  ]
+  productDataList: ProductData[] = [];
+  totals: Totals;
 
-  exemptItems = [
-    'book',
-    'chocolate',
-    'pills',
-  ]
-
-  parseContent() {
-    this.total = 0;
-    this.totalSalesTax = 0;
-    const receiptItems: any = [];
-    // split by lines first
-    const items = this.fileContent.split('\n');
-    console.log("Split content", items);
-
-    items.forEach((i: any) => {
-      console.log("item", i);
-      const temp = i.split(' at');
-      console.log("temp", temp);
-      receiptItems.push(this.calculateTax(temp))
-    });
-    console.log("receiptItems", receiptItems);
-    this.checkoutItems = [...receiptItems]
-  }
-
-
-  public onChange(fileList: FileList): void {
+  // On file upload
+  public onFileUpload(fileList: FileList): void {
     let file = fileList[0];
     let fileReader: FileReader = new FileReader();
     let self = this;
     fileReader.onloadend = (x) => {
       self.fileContent = fileReader.result;
-      console.log("file content", this.fileContent);
-      this.parseContent()
+      const items = this.fileContent.split('\n');
+      this.productDataList = this.prepareProductData(items);
+      this.totals = this.calculateTotals(this.productDataList);
     }
     if (file) {
       fileReader.readAsText(file);
     }
   }
 
-  calculateTax(item: any) {
-    console.log("caluclate item", item);
-    const originalName = item[0];
-    const originalPrice = Number(item[1]);
-    console.log("originalName", originalName);
-    console.log("originalPrice", originalPrice);
-    let taxPercentage = 0;
-    // check if exempt item
-    const exemptMatch = this.exemptItems.filter((item) => {
-      return originalName.toLowerCase().includes(item.toLowerCase());
+  // Prepare Product list
+  prepareProductData(items: string[]): ProductData[] {
+    let productDataList: ProductData[] = [];
+    items.forEach((item: string) => {
+      let productData: ProductData = {};
+      productData.price = Number(item.split(' at')[1]);
+      productData.name = item.split(' at')[0];
+      productData.quantity = Number(item.split(' ')[0]);
+      productData.isImported = itemType.filter((item: string) => productData.name.toLowerCase().includes(item.toLowerCase())).length > 0;
+      productData.isExempted = exemptItems.filter((item: string) => productData.name.toLowerCase().includes(item.toLowerCase())).length > 0;
+      this.calculateTax(productData);
+      productDataList.push(productData);
     });
-    console.log("exemptMatch", exemptMatch);
-    if (exemptMatch.length == 0) {
-      taxPercentage += 10;
-    }
-    // check if imported
-    const importedMatch = this.itemType.filter((item) => {
-      return originalName.toLowerCase().includes(item.toLowerCase());
-    });
-    console.log("importedMatch", importedMatch);
+    return productDataList;
+  }
 
-    if (importedMatch.length) {
+  // Calculate taxes based on prepared product data
+  calculateTax(productData): void {
+    let taxPercentage: number = 0;
+    if (productData.isImported) {
       taxPercentage += 5;
     }
-    const salesTax = (taxPercentage * originalPrice) / 100;
-    console.log("salesTax", salesTax);
-    // Rounded up to the nearest 0.05
-    const roundedSalesTax = Math.ceil(salesTax / 0.05) * 0.05;
-    console.log("roundedSalesTax", roundedSalesTax);
-    const itemTotal = originalPrice + roundedSalesTax;
-    console.log("itemTotal", itemTotal);
-    this.totalSalesTax += roundedSalesTax;
-    console.log("totalSalesTax", this.totalSalesTax);
-    this.total += itemTotal;
-    console.log("this.total", this.total);
-    const obj = {
-      name: item[0],
-      price: itemTotal
+    if (!productData.isExempted) {
+      taxPercentage += 10;
     }
-    console.log("obj", obj);
-    return obj;
+    const tax = (taxPercentage * productData.price) / 100;
+    productData.salesTax = Math.ceil(tax / 0.05) * 0.05;
+    productData.priceWithTax = (productData.price + productData.salesTax) * productData.quantity;
+  }
+
+  // Calculate total taxes and total prices for product list
+  calculateTotals(productDataList: ProductData[]): Totals {
+    let totals: Totals = { totalSalesTax: 0, totalPrice: 0 };
+    productDataList.forEach((productData: ProductData) => {
+      totals.totalPrice += productData.priceWithTax;
+      totals.totalSalesTax += productData.salesTax * productData.quantity;
+    })
+    return totals;
   }
 }
